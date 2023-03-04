@@ -2,21 +2,27 @@ name: Build
 on: push
 
 jobs:
-  get_repo_branch:
+  build-kernel:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+
       - name: Dump GitHub context
         id: github_context_step
         run: echo '${{ toJSON(github) }}'
-      - name: Dump job context
-        run: echo '${{ toJSON(job) }}'
-      - name: Dump steps context
-        run: echo '${{ toJSON(steps) }}'
-      - name: Dump runner context
-        run: echo '${{ toJSON(runner) }}'
-      - name: Dump strategy context
-        run: echo '${{ toJSON(strategy) }}'
-      - name: Dump matrix context
-        run: echo '${{ toJSON(matrix) }}'
+
+      - name: Checkout Armbian Framework
+        uses: actions/checkout@v3.3.0
+        with:
+          repository: amazingfate/build
+          ref: rk3588-new-legacy
+          fetch-depth: 1
+          clean: false # true is default. it *will* delete the hosts /dev if mounted inside.
+          path: build
+
+      - name: Build kernel
+        shell: bash
+        run: |
+          sed -i "s|armbian/linux-rockchip|${{ github.event.repository.full_name }}|g" config/sources/families/rockchip-rk3588.conf
+          sed -i "s|rockchip-5.10|${{ github.event.ref_name }}|g" config/sources/families/rockchip-rk3588.conf
+          git status
+          ./compile.sh kernel "BRANCH=legacy" "BOARD=rock-5b" SHARE_LOG=yes CLEAN_LEVEL="alldebs"
