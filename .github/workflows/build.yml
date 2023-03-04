@@ -45,7 +45,7 @@ jobs:
           ./compile.sh kernel "BRANCH=legacy" "BOARD=rock-5b" SHARE_LOG=yes CLEAN_LEVEL="alldebs"
 
       - name: Upload kernel
-        if: needs.prepare_release.outputs.release_id != '' && secrets.GITHUB_TOKEN != ''
+        if: needs.prepare_release.outputs.release_id != '' && {{ secrets.GITHUB_TOKEN }} != ''
         uses: xresloader/upload-to-github-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -55,7 +55,7 @@ jobs:
           draft: false
           overwrite: true
       - name: Rollback release
-        if: failure() && needs.prepare_release.outputs.release_id != '' && secrets.GITHUB_TOKEN != ''
+        if: failure() && needs.prepare_release.outputs.release_id != '' && {{ secrets.GITHUB_TOKEN }} != ''
         uses: author/action-rollback@stable
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
