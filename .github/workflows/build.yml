@@ -2,13 +2,31 @@ name: Build
 on: push
 
 jobs:
-  build-kernel:
+  prepare_release:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Get time
+        id: time
+        uses: nanzm/get-time-action@v1.1
+        with:
+          format: 'YYYYMMDD-HHmm'
+      - name: Create empty release
+        id: release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.time.outputs.time }}_${{ github.ref_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          target_commitish: ${{ github.ref_name }}
+          draft: false
+    outputs:
+      release_id: ${{ steps.release.outputs.id }}
 
-      - name: Dump GitHub context
-        id: github_context_step
-        run: echo '${{ toJSON(github) }}'
+  build-kernel:
+    runs-on: ubuntu-latest
+    needs: prepare_release
+    steps:
 
       - name: Checkout Armbian Framework
         uses: actions/checkout@v3.3.0
@@ -25,3 +43,21 @@ jobs:
           sed -i "s|rockchip-5.10|${{ github.ref_name }}|g" config/sources/families/rockchip-rk3588.conf
           git status
           ./compile.sh kernel "BRANCH=legacy" "BOARD=rock-5b" SHARE_LOG=yes CLEAN_LEVEL="alldebs"
+
+      - name: Upload kernel
+        if: needs.prepare_release.outputs.release_id != '' && secrets.GITHUB_TOKEN != ''
+        uses: xresloader/upload-to-github-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          release_id: ${{ needs.prepare_release.outputs.release_id }}
+          file: "./build/output/debs/*.deb"
+          draft: false
+          overwrite: true
+      - name: Rollback release
+        if: failure() && needs.prepare_release.outputs.release_id != '' && secrets.GITHUB_TOKEN != ''
+        uses: author/action-rollback@stable
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          release_id: ${{ needs.prepare_release.outputs.release_id }}
