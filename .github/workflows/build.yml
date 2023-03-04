@@ -22,6 +22,6 @@ jobs:
         shell: bash
         run: |
           sed -i "s|armbian/linux-rockchip|${{ github.event.repository.full_name }}|g" config/sources/families/rockchip-rk3588.conf
-          sed -i "s|rockchip-5.10|${{ github.event.ref_name }}|g" config/sources/families/rockchip-rk3588.conf
+          sed -i "s|rockchip-5.10|${{ github.ref_name }}|g" config/sources/families/rockchip-rk3588.conf
           git status
           ./compile.sh kernel "BRANCH=legacy" "BOARD=rock-5b" SHARE_LOG=yes CLEAN_LEVEL="alldebs"
