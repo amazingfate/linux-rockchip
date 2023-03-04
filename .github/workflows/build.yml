@@ -17,7 +17,6 @@ jobs:
           ref: rk3588-new-legacy
           fetch-depth: 1
           clean: false # true is default. it *will* delete the hosts /dev if mounted inside.
-          path: build
 
       - name: Build kernel
         shell: bash
