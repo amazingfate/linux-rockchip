@@ -830,6 +830,10 @@ static const struct dw_pcie_ops dw_pcie_ops = {
 	.link_up = rk_pcie_link_up,
 };
 
+static const struct dw_pcie_ops dw_pcie_ops_default_link_up = {
+	.start_link = rk_pcie_establish_link,
+};
+
 static void rk_pcie_fast_link_setup(struct rk_pcie *rk_pcie)
 {
 	u32 val;
@@ -1153,7 +1157,12 @@ static int rk_pcie_really_probe(void *p)
 	}
 
 	pci->dev = dev;
-	pci->ops = &dw_pcie_ops;
+	if (device_property_read_bool(dev, "rockchip,default-link-up"))
+	{
+		dev_info(dev, "using pcie default link_up because of rockchip,default-link-up\n");
+		pci->ops = &dw_pcie_ops_default_link_up;
+	} else
+		pci->ops = &dw_pcie_ops;
 
 	if (data)
 		rk_pcie->msi_vector_num = data->msi_vector_num;
